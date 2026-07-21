@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>剧本杀辅助系统 - 联网版</title>
-    <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.7.1/cloudbase.full.js"></script>
+    <title>剧本杀辅助系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0d0d; }
@@ -64,12 +63,52 @@
     <div class="section" id="admin-init-section"><h2>初始化身份池</h2><div id="init-msg" class="msg"></div><div id="init-inputs"></div><button onclick="saveInit()">保存配置</button><button onclick="showSection('admin-panel')" class="back-btn">返回管理面板</button></div>
 </div>
 <script>
-// ========== 腾讯云 CloudBase 初始化 ==========
-const app = cloudbase.init({ env: 'qizhong-d2gadyuog3e80a611' });
-const db = app.database();
-const auth = app.auth();
+// ========== 腾讯云 HTTP API ==========
+const ENV_ID = 'qizhong-d2gadyuog3e80a611';
+const BASE_URL = `https://${ENV_ID}.service.tcloudbase.com/api/v1/databases`;
+let ACCESS_TOKEN = '';
 
-// 云端数据缓存
+async function initCloud() {
+    try {
+        const res = await fetch(`https://${ENV_ID}.service.tcloudbase.com/api/v1/auth/anonymous`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        ACCESS_TOKEN = data.access_token || '';
+        console.log('云连接成功');
+    } catch(e) {
+        console.log('云连接失败，使用本地缓存');
+    }
+}
+
+async function loadFromCloud() {
+    if(!ACCESS_TOKEN) return null;
+    try {
+        const res = await fetch(`${BASE_URL}/game/documents/main`, {
+            headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}` }
+        });
+        const d = await res.json();
+        if(d && d.data) return JSON.parse(d.data);
+    } catch(e) {}
+    return null;
+}
+
+async function saveToCloud(data) {
+    if(!ACCESS_TOKEN) return;
+    try {
+        await fetch(`${BASE_URL}/game/documents/main`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${ACCESS_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ data: JSON.stringify(data) })
+        });
+    } catch(e) {}
+}
+
+// ========== 云端数据缓存 ==========
 let cloudCache = {
     players: {},
     identity_pool: {},
@@ -84,39 +123,16 @@ let cloudCache = {
     year_log: [],
     prayer_effect: null,
     next_gentry_rate: null,
-    identity_pool_initialized: true
+    identity_pool_initialized: false
 };
 
-// 防抖保存
 let saveTimer = null;
 function scheduleSave() {
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => saveToCloud(), 300);
+    saveTimer = setTimeout(() => saveToCloud(cloudCache), 500);
 }
 
-// 从云端加载数据
-async function loadFromCloud() {
-    try {
-        const res = await db.collection('game').doc('main').get();
-        if (res.data && res.data.length > 0 && res.data[0].data) {
-            const d = JSON.parse(res.data[0].data);
-            Object.assign(cloudCache, d);
-        }
-    } catch (e) {
-        console.log('首次使用，使用默认数据');
-    }
-}
-
-// 保存到云端
-async function saveToCloud() {
-    try {
-        await db.collection('game').doc('main').set({ data: JSON.stringify(cloudCache) });
-    } catch (e) {
-        console.log('保存失败，重试中...');
-    }
-}
-
-// ========== 原有游戏逻辑（存储层改为 cloudCache） ==========
+// ========== 游戏逻辑 ==========
 const ADMIN_PASSWORD = 'admin123';
 const BASE_IDENTITIES = ['忠臣','贪官','将军','奸臣','乡绅','读书人','劳动人民'];
 const PINYIN_MAP = {'忠臣':'zhongchen','贪官':'tanguan','将军':'jiangjun','奸臣':'jianchen','乡绅':'xiangshen','读书人':'dushuren','劳动人民':'laodongrenmin','邶神信徒':'beishenxintu','叛军':'panjun'};
@@ -307,13 +323,14 @@ function toggleLockRebel(){const hd=getDynamicHidden();hd.rebelLocked=!hd.rebelL
 function loadHiddenDataDisplay(){const hd=getDynamicHidden();document.getElementById('hd-treasury').value=hd.treasury;document.getElementById('hd-military').value=hd.military;document.getElementById('hd-tax-rate').value=hd.taxRate;document.getElementById('hd-tax-base').value=hd.taxBase;document.getElementById('hd-salary').value=hd.salary;document.getElementById('hd-welfare').value=hd.welfare;document.getElementById('hd-training').value=hd.training;document.getElementById('hd-court-official').value=hd.courtOfficial;document.getElementById('hd-rebel-official').value=hd.rebelOfficial;document.getElementById('hd-court-gentry').value=hd.courtGentry;document.getElementById('hd-rebel-gentry').value=hd.rebelGentry;document.getElementById('hd-court-civilian').value=hd.courtCivilian;document.getElementById('hd-rebel-civilian').value=hd.rebelCivilian;document.getElementById('hd-rebel-property').value=hd.rebelProperty;document.getElementById('hd-rebel-military').value=hd.rebelMilitary;computeRebelAssets();updateLockButton();}
 function saveHiddenData(){const hd=getDynamicHidden();const fields=['treasury','military','taxRate','taxBase','salary','welfare','training','courtOfficial','rebelOfficial','courtGentry','rebelGentry','courtCivilian','rebelCivilian','rebelProperty','rebelMilitary'];fields.forEach(f=>{const el=document.getElementById('hd-'+f);if(el&&el.value.trim()!==''){hd[f]=parseInt(el.value)||0;}});setDynamicHidden(hd);computeRebelAssets();addLog('后台修改了隐藏数据','warn');alert('已保存');}
 function computeRebelAssets(){const hd=getDynamicHidden();if(hd.rebelLocked){document.getElementById('hd-rebel-property').value=hd.rebelProperty;document.getElementById('hd-rebel-military').value=hd.rebelMilitary;return;}const players=getPlayers();let civSav=0,gentSav=0;for(const[_,d]of Object.entries(players)){if(d.baseIdentity==='劳动人民'||d.baseIdentity==='读书人')civSav+=d.savings;if(d.baseIdentity==='乡绅')gentSav+=d.savings;}hd.rebelProperty=Math.floor(civSav*10+gentSav*10);hd.rebelMilitary=Math.floor(hd.rebelProperty*0.05);document.getElementById('hd-rebel-property').value=hd.rebelProperty;document.getElementById('hd-rebel-military').value=hd.rebelMilitary;}
-function resetAll(){if(confirm('清除所有？')){cloudCache={players:{},identity_pool:{},hidden_pool:{},dynamic_hidden:{},game_year:1,gentry_rate:10,labor_modifier:1,weaken_mode:false,duty_index:0,game_logs:[],year_log:[],prayer_effect:null,next_gentry_rate:null,identity_pool_initialized:true};scheduleSave();alert('已重置');showSection('admin-panel');}}
+function resetAll(){if(confirm('清除所有？')){cloudCache={players:{},identity_pool:{},hidden_pool:{},dynamic_hidden:{},game_year:1,gentry_rate:10,labor_modifier:1,weaken_mode:false,duty_index:0,game_logs:[],year_log:[],prayer_effect:null,next_gentry_rate:null,identity_pool_initialized:false};scheduleSave();alert('已重置');showSection('admin-panel');}}
 function adminLogout(){showSection('main-menu');}
+
+// ========== 启动 ==========
 window.addEventListener('DOMContentLoaded',async()=>{
-    // 匿名登录
-    try { await auth.anonymousAuthProvider().signIn(); } catch(e) {}
-    // 加载云端数据
-    await loadFromCloud();
+    await initCloud();
+    const remote = await loadFromCloud();
+    if(remote){Object.assign(cloudCache, remote);}
     if(!cloudCache.identity_pool_initialized){
         const p={};p['忠臣']=2;p['贪官']=2;p['将军']=1;p['奸臣']=1;p['乡绅']=1;p['读书人']=1;p['劳动人民']=2;setPool(p);
         const hp={};HIDDEN_IDENTITIES.forEach(id=>hp[id]=1);setHiddenPool(hp);
@@ -323,7 +340,6 @@ window.addEventListener('DOMContentLoaded',async()=>{
     if(!cloudCache.game_year)setYear(1);
     if(!cloudCache.gentry_rate)setGentryRate(10);
     if(!cloudCache.labor_modifier)setLaborModifier(1);
-    scheduleSave();
     renderInitInputs();updateDutyDisplay();updateYearDisplay();
     showSection('main-menu');
 });
