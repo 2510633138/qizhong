@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>剧本杀辅助系统 - 联网版</title>
+    <script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.7.1/cloudbase.full.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #0d0d0d; }
+        body { font-family: 'Microsoft YaHei', sans-serif; display: flex; justify-content: center; align-items: flex-start; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; }
+        .container { width: 100%; max-width: 100%; height: 100vh; height: 100dvh; overflow-y: auto; padding: 16px; background: #1a1a1a; }
+        h1, h2 { color: #c8a860; text-align: center; letter-spacing: 2px; margin-bottom: 12px; } h1 { font-size: 22px; } h2 { font-size: 17px; } h3 { color: #c8a860; font-size: 14px; margin-bottom: 8px; }
+        input, select, button, textarea { width: 100%; padding: 10px; font-size: 15px; font-family: inherit; background: #0a0a0a; color: #ccc; border: 1px solid #444; border-radius: 4px; margin-bottom: 8px; }
+        button { background: #1a1a2e; color: #c8a860; border-color: #8b6914; cursor: pointer; letter-spacing: 2px; font-weight: bold; transition: all 0.2s; }
+        button:hover { background: #222240; border-color: #c8a860; } button:active { transform: scale(0.97); }
+        button.danger { color: #c44; border-color: #622; } button.danger:hover { background: #2a1010; }
+        button.night-btn { color: #8b7dff; border-color: #5a4fcf; } button.night-btn:hover { background: #1a1a3a; border-color: #8b7dff; }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        .label-row { display: flex; justify-content: space-between; align-items: center; color: #888; font-size: 14px; margin-bottom: 4px; }
+        .label-row input { width: 60px !important; margin-bottom: 0 !important; padding: 6px !important; text-align: center; }
+        .inline-input { width: 70px !important; display: inline-block; margin: 0 4px !important; padding: 6px !important; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th, td { border: 1px solid #333; padding: 6px 4px; text-align: center; } th { background: #1a1a2e; color: #c8a860; } td { color: #aaa; } td input { width: 50px; text-align: center; background: #0a0a0a; color: #ccc; border: 1px solid #333; } .hidden-cell { color: #c44; font-weight: bold; }
+        .section { display: none; } .section.active { display: block; }
+        .msg { text-align: center; color: #c8a860; font-size: 14px; margin: 8px 0; min-height: 20px; }
+        .back-btn { margin-top: 4px; } .pool-info { color: #888; font-size: 12px; text-align: center; margin-bottom: 10px; }
+        .tab-row { display: flex; gap: 8px; margin-bottom: 12px; } .tab-btn { flex: 1; font-size: 13px; } .tab-btn.active-tab { background: #2a2a40; border-color: #c8a860; color: #fff; }
+        .id-card { max-width: 180px; border-radius: 10px; border: 3px solid #8b6914; display: block; margin: 0 auto; }
+        .id-card-small { max-width: 140px; border-radius: 8px; border: 2px solid #c44; display: block; margin: 0 auto; }
+        .card-label { text-align: center; font-size: 12px; margin: 4px 0; } .card-label.base { color: #c8a860; } .card-label.hidden { color: #c44; }
+        .card-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .card-reveal { animation: cardFlip 0.8s ease-out; } @keyframes cardFlip { 0% { transform: rotateY(90deg) scale(0.5); opacity: 0; } 60% { transform: rotateY(-10deg) scale(1.05); opacity: 1; } 100% { transform: rotateY(0deg) scale(1); opacity: 1; } }
+        .card-glow { animation: glow 1.5s ease-in-out infinite; } @keyframes glow { 0%,100% { box-shadow: 0 0 20px rgba(200,168,96,0.6); } 50% { box-shadow: 0 0 40px rgba(200,168,96,1), 0 0 60px rgba(200,150,50,0.5); } }
+        .card-close-btn { margin-top: 16px; padding: 10px 30px; font-size: 16px; color: #c8a860; background: #1a1a2e; border: 2px solid #8b6914; cursor: pointer; letter-spacing: 3px; border-radius: 4px; }
+        .btn-row { display: flex; gap: 10px; } .btn-row button { flex: 1; }
+        .data-block { background: #0d0d1a; border: 1px solid #333; border-radius: 6px; padding: 12px; margin-bottom: 12px; } .data-block h4 { color: #c8a860; margin-bottom: 8px; font-size: 13px; }
+        .formula-text { color: #888; font-size: 11px; }
+        .night-result { background: #0d1a0d; border: 1px solid #5f5; border-radius: 6px; padding: 12px; margin: 8px 0; color: #5f5; }
+        .log-entry { border-bottom: 1px solid #333; padding: 6px 0; font-size: 12px; color: #aaa; } .log-entry.warn { color: #c8a860; } .log-entry.danger { color: #c44; }
+        .action-cards { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .action-card { width: 100px; height: 140px; background: #1a1a2e; border: 2px solid #555; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #888; font-size: 14px; transition: all 0.3s; }
+        .action-card:hover { border-color: #c8a860; color: #c8a860; }
+        .action-card.flipped-success { background: #1a2a1a; border-color: #5f5; color: #5f5; font-size: 18px; font-weight: bold; }
+        .action-card.flipped-fail { background: #2a1a1a; border-color: #f55; color: #f55; font-size: 18px; font-weight: bold; }
+        .action-card.flipped-neutral { background: #1a1a2a; border-color: #888; color: #888; font-size: 18px; font-weight: bold; }
+        .year-banner { background: #1a1a2e; border: 2px solid #c8a860; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 12px; color: #c8a860; font-size: 18px; }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <div class="section active" id="main-menu"><h1>剧本杀辅助系统</h1><button onclick="showSection('register-section')">玩家注册</button><button onclick="showSection('login-section')">玩家登录</button><button onclick="showSection('admin-login-section')" style="margin-top:16px;font-size:12px;color:#555;">后台管理</button></div>
+    <div class="section" id="register-section"><h2>玩家注册</h2><div id="register-msg" class="msg"></div><div class="pool-info" id="register-pool-info"></div><input type="text" id="reg-name" placeholder="输入名字"><input type="password" id="reg-pwd" placeholder="设置密码"><h3>初始化属性</h3><div style="display:flex;gap:8px;"><span style="color:#ccc;line-height:36px;">HP:</span><input type="number" id="reg-hp" class="inline-input" value="20"><span style="color:#ccc;line-height:36px;">San:</span><input type="number" id="reg-san" class="inline-input" value="20"></div><button onclick="register()">注册并抽卡</button><button onclick="showSection('main-menu')" class="back-btn">返回</button></div>
+    <div class="section" id="login-section"><h2>玩家登录</h2><div id="login-msg" class="msg"></div><input type="text" id="login-name" placeholder="输入名字"><input type="password" id="login-pwd" placeholder="输入密码"><button onclick="login()">登录</button><button onclick="showSection('main-menu')" class="back-btn">返回</button></div>
+    <div class="section" id="player-panel"><h2 id="panel-title">个人面板</h2><div class="btn-row" style="margin-bottom:16px;"><button onclick="showPlayerInfo()">📋 个人信息</button><button class="night-btn" id="night-action-btn" onclick="playerNightAction()">🌙 年度行动</button></div><div id="night-status-text" style="text-align:center;color:#5f5;font-size:13px;margin-bottom:8px;"></div><div id="night-result-area"></div><button onclick="logout()" style="margin-top:10px;">退出登录</button></div>
+    <div class="section" id="player-info-section"><h2 id="info-title">个人信息</h2><div id="info-content"></div><button onclick="backToPanel()" style="margin-top:10px;">返回</button></div>
+    <div class="section" id="admin-login-section"><h2>管理员登录</h2><div id="admin-login-msg" class="msg"></div><input type="password" id="admin-pwd-input" placeholder="输入管理密码"><button onclick="adminLogin()">登录</button><button onclick="showSection('main-menu')" class="back-btn">返回</button></div>
+    <div class="section" id="admin-panel"><h2>管理面板</h2><div class="year-banner" id="year-display">第 1 年</div><div class="tab-row"><button class="tab-btn active-tab" id="tab-players" onclick="switchAdminTab('players')">玩家数据</button><button class="tab-btn" id="tab-hidden" onclick="switchAdminTab('hidden')">隐藏数据</button><button class="tab-btn" id="tab-year" onclick="switchAdminTab('year')">年度控制</button><button class="tab-btn" id="tab-log" onclick="switchAdminTab('log')">日志</button></div>
+        <div id="admin-tab-players"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"><button onclick="showSection('admin-init-section')" style="flex:1;min-width:120px;font-size:13px;">初始化身份池</button><button onclick="resetAll()" class="danger" style="flex:1;min-width:120px;font-size:13px;">重置全部数据</button></div><div id="admin-table"></div><button onclick="savePlayersData()" style="margin-top:8px;">保存玩家数据修改</button></div>
+        <div id="admin-tab-hidden" style="display:none;"><h3>国家隐藏数据（切换标签自动刷新，手动修改需保存）</h3><div class="data-block"><h4>国家财产</h4><div class="label-row"><span>国库</span><input type="number" id="hd-treasury" style="width:80px;"></div><div class="label-row"><span>军力</span><input type="number" id="hd-military" style="width:80px;"></div><div class="formula-text">税收（百人）：劳动人民收入 × <input type="number" id="hd-tax-rate" style="width:50px;display:inline;">% + <input type="number" id="hd-tax-base" style="width:60px;display:inline;"></div></div><div class="data-block"><h4>国家开销</h4><table><tr><th>项目</th><th>数值</th></tr><tr><td>俸禄发放</td><td><input type="number" id="hd-salary" style="width:80px;"></td></tr><tr><td>社会福利</td><td><input type="number" id="hd-welfare" style="width:80px;"></td></tr><tr><td>军事训练</td><td><input type="number" id="hd-training" style="width:80px;"></td></tr></table></div><div class="data-block"><h4>民心</h4><table><tr><th>群体</th><th>朝廷</th><th>起义</th></tr><tr><td>官员</td><td><input type="number" id="hd-court-official" style="width:60px;"></td><td><input type="number" id="hd-rebel-official" style="width:60px;"></td></tr><tr><td>乡绅</td><td><input type="number" id="hd-court-gentry" style="width:60px;"></td><td><input type="number" id="hd-rebel-gentry" style="width:60px;"></td></tr><tr><td>民众</td><td><input type="number" id="hd-court-civilian" style="width:60px;"></td><td><input type="number" id="hd-rebel-civilian" style="width:60px;"></td></tr></table></div><div class="data-block"><h4>起义资产</h4><div class="label-row"><span>起义财产</span><input type="number" id="hd-rebel-property" style="width:80px;"></div><div class="label-row"><span>起义军力</span><input type="number" id="hd-rebel-military" style="width:80px;"></div><button onclick="toggleLockRebel()" id="btn-lock-rebel" style="font-size:12px;margin-top:4px;">🔓 当前：动态计算（点击锁定）</button></div><button onclick="saveHiddenData()" style="margin-top:8px;">保存全部隐藏数据</button></div>
+        <div id="admin-tab-year" style="display:none;"><h3>年度控制</h3><p style="color:#888;font-size:12px;margin-bottom:8px;">轮值官员：<span id="duty-officer-display" style="color:#c8a860;">—</span></p><button onclick="nextDutyOfficer()" style="font-size:13px;margin-bottom:8px;">手动切换轮值官员</button><button onclick="toggleWeaken()" id="btn-weaken" style="font-size:13px;margin-bottom:8px;">🔓 削弱模式：关闭</button><hr style="border-color:#333;margin:12px 0;"><button onclick="newYear()" style="background:#2a1a1a;color:#c8a860;font-size:16px;padding:14px;">🎆 开启下一年</button><p style="color:#888;font-size:11px;margin-top:6px;">所有玩家完成年度行动后，点击此按钮进入下一年</p></div>
+        <div id="admin-tab-log" style="display:none;"><h3>事件日志</h3><div id="log-display" style="max-height:400px;overflow-y:auto;"></div><button onclick="clearLog()" class="danger" style="margin-top:8px;">清空日志</button></div>
+        <button onclick="adminLogout()" style="margin-top:10px;">退出管理</button></div>
+    <div class="section" id="admin-init-section"><h2>初始化身份池</h2><div id="init-msg" class="msg"></div><div id="init-inputs"></div><button onclick="saveInit()">保存配置</button><button onclick="showSection('admin-panel')" class="back-btn">返回管理面板</button></div>
+</div>
+<script>
+// ========== 腾讯云 CloudBase 初始化 ==========
+const app = cloudbase.init({ env: 'qizhong-d2gadyuog3e80a611' });
+const db = app.database();
+const auth = app.auth();
+
+// 云端数据缓存
+let cloudCache = {
+    players: {},
+    identity_pool: {},
+    hidden_pool: {},
+    dynamic_hidden: {},
+    game_year: 1,
+    gentry_rate: 10,
+    labor_modifier: 1,
+    weaken_mode: false,
+    duty_index: 0,
+    game_logs: [],
+    year_log: [],
+    prayer_effect: null,
+    next_gentry_rate: null,
+    identity_pool_initialized: true
+};
+
+// 防抖保存
+let saveTimer = null;
+function scheduleSave() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveToCloud(), 300);
+}
+
+// 从云端加载数据
+async function loadFromCloud() {
+    try {
+        const res = await db.collection('game').doc('main').get();
+        if (res.data && res.data.length > 0 && res.data[0].data) {
+            const d = JSON.parse(res.data[0].data);
+            Object.assign(cloudCache, d);
+        }
+    } catch (e) {
+        console.log('首次使用，使用默认数据');
+    }
+}
+
+// 保存到云端
+async function saveToCloud() {
+    try {
+        await db.collection('game').doc('main').set({ data: JSON.stringify(cloudCache) });
+    } catch (e) {
+        console.log('保存失败，重试中...');
+    }
+}
+
+// ========== 原有游戏逻辑（存储层改为 cloudCache） ==========
+const ADMIN_PASSWORD = 'admin123';
+const BASE_IDENTITIES = ['忠臣','贪官','将军','奸臣','乡绅','读书人','劳动人民'];
+const PINYIN_MAP = {'忠臣':'zhongchen','贪官':'tanguan','将军':'jiangjun','奸臣':'jianchen','乡绅':'xiangshen','读书人':'dushuren','劳动人民':'laodongrenmin','邶神信徒':'beishenxintu','叛军':'panjun'};
+const HIDDEN_IDENTITIES = ['邶神信徒','叛军'];
+const COURT_CAMP = ['忠臣','贪官','将军','奸臣'];
+const CIVILIAN_CAMP = ['乡绅','读书人','劳动人民'];
+const OFFICERS = ['忠臣','贪官','奸臣'];
+const DEFAULT_STATS = {'忠臣':{income:20,expense:10,savings:0},'贪官':{income:20,expense:30,savings:60},'将军':{income:20,expense:15,savings:0},'奸臣':{income:20,expense:20,savings:40},'乡绅':{income:0,expense:10,savings:30},'读书人':{income:10,expense:5,savings:15},'劳动人民':{income:10,expense:3,savings:10},'邶神信徒':{income:0,expense:0,savings:0},'叛军':{income:0,expense:0,savings:0}};
+const INIT_HIDDEN = {treasury:600,military:80,taxRate:30,taxBase:100,salary:100,welfare:100,training:100,courtOfficial:5,rebelOfficial:0,courtGentry:10,rebelGentry:5,courtCivilian:50,rebelCivilian:30,rebelProperty:0,rebelMilitary:0,rebelLocked:false};
+let currentPlayerName = '';
+
+function getPinyin(id){return PINYIN_MAP[id]||id;}
+function showSection(id){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));const t=document.getElementById(id);if(t)t.classList.add('active');if(id==='register-section')updateRegisterPoolInfo();if(id==='admin-init-section')renderInitInputs();if(id==='admin-panel'){renderAdminTable();switchAdminTab('players');updateDutyDisplay();loadHiddenDataDisplay();computeRebelAssets();updateYearDisplay();updateLockButton();updateWeakenButton();}}
+function getYear(){return cloudCache.game_year||1;}
+function setYear(v){cloudCache.game_year=v;scheduleSave();}
+function updateYearDisplay(){document.getElementById('year-display').textContent='第 '+getYear()+' 年';}
+function getDutyIndex(){return cloudCache.duty_index||0;}
+function setDutyIndex(v){cloudCache.duty_index=v;scheduleSave();}
+function getDutyOfficer(){const p=getPlayers();const o=Object.entries(p).filter(([_,d])=>OFFICERS.includes(d.baseIdentity));if(!o.length)return null;return o[getDutyIndex()%o.length][0];}
+function nextDutyOfficer(){const p=getPlayers();const o=Object.entries(p).filter(([_,d])=>OFFICERS.includes(d.baseIdentity));if(!o.length)return;setDutyIndex((getDutyIndex()+1)%o.length);updateDutyDisplay();}
+function updateDutyDisplay(){const e=document.getElementById('duty-officer-display');if(e)e.textContent=getDutyOfficer()||'无官员';}
+function switchAdminTab(tab){['players','hidden','year','log'].forEach(t=>{document.getElementById('admin-tab-'+t).style.display=t===tab?'block':'none';const b=document.getElementById('tab-'+t);if(b)b.classList.toggle('active-tab',t===tab);});if(tab==='hidden'){loadHiddenDataDisplay();computeRebelAssets();updateLockButton();}if(tab==='year'){updateDutyDisplay();updateWeakenButton();}if(tab==='log')renderLog();}
+function getPool(){return cloudCache.identity_pool||{};}
+function setPool(p){cloudCache.identity_pool=p;scheduleSave();}
+function getHiddenPool(){return cloudCache.hidden_pool||{};}
+function setHiddenPool(p){cloudCache.hidden_pool=p;scheduleSave();}
+function getAvailableIdentities(){const pool=getPool(),players=getPlayers(),taken={};Object.values(players).forEach(p=>{if(p.baseIdentity)taken[p.baseIdentity]=(taken[p.baseIdentity]||0)+1;});const a={};for(const[id,t]of Object.entries(pool))a[id]=Math.max(0,t-(taken[id]||0));return a;}
+function getAvailableHidden(){const pool=getHiddenPool(),players=getPlayers(),taken={};Object.values(players).forEach(p=>{if(p.hiddenIdentity)taken[p.hiddenIdentity]=(taken[p.hiddenIdentity]||0)+1;});const a={};for(const[id,t]of Object.entries(pool))a[id]=Math.max(0,t-(taken[id]||0));return a;}
+function updateRegisterPoolInfo(){const ba=getAvailableIdentities(),ha=getAvailableHidden();document.getElementById('register-pool-info').innerHTML=`基础身份剩余：${Object.values(ba).reduce((a,b)=>a+b,0)} | 隐藏身份剩余：${Object.values(ha).reduce((a,b)=>a+b,0)}`;}
+function renderInitInputs(){const c=document.getElementById('init-inputs'),pool=getPool(),hp=getHiddenPool();let h='<div style="color:#c8a860;">基础身份：</div>';BASE_IDENTITIES.forEach(id=>{h+=`<div class="label-row"><span>${id}</span><input type="number" id="init-${id}" value="${pool[id]||0}" min="0"></div>`;});h+='<div style="color:#c8a860;margin-top:10px;">隐藏身份（附加）：</div>';HIDDEN_IDENTITIES.forEach(id=>{h+=`<div class="label-row"><span>${id}</span><input type="number" id="init-h-${id}" value="${hp[id]||0}" min="0"></div>`;});c.innerHTML=h;}
+function saveInit(){const pool={},hp={};BASE_IDENTITIES.forEach(id=>{pool[id]=parseInt(document.getElementById('init-'+id).value)||0;});HIDDEN_IDENTITIES.forEach(id=>{hp[id]=parseInt(document.getElementById('init-h-'+id).value)||0;});setPool(pool);setHiddenPool(hp);document.getElementById('init-msg').textContent='已保存！';cloudCache.identity_pool_initialized=true;scheduleSave();}
+function getPlayers(){return cloudCache.players||{};}
+function setPlayers(p){cloudCache.players=p;scheduleSave();}
+function getGentryRate(){return cloudCache.gentry_rate||10;}
+function setGentryRate(v){cloudCache.gentry_rate=v;scheduleSave();}
+
+function tryAssignHidden(players,name){
+    const ha=getAvailableHidden();const hiddenLeft=Object.values(ha).reduce((a,b)=>a+b,0);
+    if(hiddenLeft===0)return;const p=players[name];if(!p||p.hiddenIdentity)return;
+    const isCivilian=CIVILIAN_CAMP.includes(p.baseIdentity);
+    const rebelsLeft=ha['叛军']||0;const believersLeft=ha['邶神信徒']||0;
+    let available=[];if(isCivilian&&rebelsLeft>0)available.push('叛军');if(believersLeft>0)available.push('邶神信徒');
+    if(available.length===0)return;
+    const chosen=available[Math.floor(Math.random()*available.length)];
+    const basePoolTotal=Object.values(getPool()).reduce((a,b)=>a+b,0);
+    const alreadyRegistered=Object.values(players).filter(pl=>pl.baseIdentity).length;
+    const remainingToRegister=basePoolTotal-alreadyRegistered;
+    const prob=hiddenLeft/Math.max(1,remainingToRegister+1);
+    if(Math.random()<prob){p.hiddenIdentity=chosen;addLog(`[${name}] 抽到隐藏身份：${chosen}！(${hiddenLeft}/${remainingToRegister+1})`);}
+    else{addLog(`[${name}] 未抽到隐藏身份 (概率${(prob*100).toFixed(1)}%)`);}
+}
+
+function register(){
+    const name=document.getElementById('reg-name').value.trim(),pwd=document.getElementById('reg-pwd').value.trim(),hp=parseInt(document.getElementById('reg-hp').value)||20,san=parseInt(document.getElementById('reg-san').value)||20,msg=document.getElementById('register-msg');
+    if(!name||!pwd){msg.textContent='名字和密码不能为空';return;}
+    let players=getPlayers();if(players[name]){msg.textContent='已注册';return;}
+    const ba=getAvailableIdentities();if(Object.values(ba).reduce((a,b)=>a+b,0)===0){msg.textContent='基础身份已分配完毕';return;}
+    const bl=[];for(const[id,c]of Object.entries(ba))for(let i=0;i<c;i++)bl.push(id);
+    const bi=bl[Math.floor(Math.random()*bl.length)],s=DEFAULT_STATS[bi];
+    players[name]={password:pwd,baseIdentity:bi,hiddenIdentity:null,income:s.income,expense:s.expense,savings:s.savings,hp,san,yearDone:false,hiddenYearDone:false,extraActionDone:false};
+    tryAssignHidden(players,name);setPlayers(players);updateRegisterPoolInfo();
+    const updated=players[name];
+    addLog(`[${name}] 注册 身份:${updated.baseIdentity} 收入:${updated.income} 开销:${updated.expense} 积蓄:${updated.savings} HP:${hp} San:${san}${updated.hiddenIdentity?' 隐藏:'+updated.hiddenIdentity:''}`);
+    showCardReveal(name,updated);
+}
+
+function login(){const name=document.getElementById('login-name').value.trim(),pwd=document.getElementById('login-pwd').value.trim(),players=getPlayers();if(!players[name]){document.getElementById('login-msg').textContent='不存在';return;}if(players[name].password!==pwd){document.getElementById('login-msg').textContent='密码错误';return;}showPlayerPanel(name,players[name]);}
+function showCardReveal(name,data){const o=document.createElement('div');o.className='card-overlay';o.id='card-reveal-overlay';let cardsHTML=`<div class="card-reveal card-glow"><img src="${getPinyin(data.baseIdentity)}.jpg" class="id-card" onerror="this.style.display='none'"><p style="color:#c8a860;margin-top:8px;">${data.baseIdentity}</p></div>`;if(data.hiddenIdentity){cardsHTML+=`<div class="card-reveal card-glow" style="margin-top:12px;"><img src="${getPinyin(data.hiddenIdentity)}.jpg" class="id-card-small" onerror="this.style.display='none'"><p style="color:#c44;margin-top:8px;">隐藏：${data.hiddenIdentity}</p></div>`;}cardsHTML+=`<button class="card-close-btn" onclick="closeCardReveal('${name}')">确 认</button>`;o.innerHTML=cardsHTML;document.body.appendChild(o);}
+function closeCardReveal(name){const o=document.getElementById('card-reveal-overlay');if(o)o.remove();showPlayerPanel(name,getPlayers()[name]);}
+
+function transferPeople(hd, fromCamp, toCamp, amount) {
+    const actual = Math.min(hd[fromCamp], amount);
+    hd[fromCamp] -= actual;
+    hd[toCamp] += actual;
+    return actual;
+}
+
+function showPlayerPanel(name,data){
+    if(currentPlayerName !== name){document.getElementById('night-result-area').innerHTML = '';}
+    showSection('player-panel');currentPlayerName=name;document.getElementById('panel-title').textContent=name;
+    const nb=document.getElementById('night-action-btn'),ns=document.getElementById('night-status-text');nb.disabled=false;
+    const allDone=data.yearDone&&(!data.hiddenIdentity||data.hiddenYearDone)&&(!(data.baseIdentity==='奸臣')||data.extraActionDone);
+    const needExtra=data.baseIdentity==='奸臣'&&data.yearDone&&!data.extraActionDone;
+    if(allDone){nb.disabled=true;ns.textContent='✅ 已完成';ns.style.color='#888';}
+    else if(needExtra){ns.textContent='🌙 额外行动（奸臣卖机密）';ns.style.color='#5f5';}
+    else if(data.hiddenIdentity&&!data.hiddenYearDone&&data.yearDone){ns.textContent='🌙 隐藏身份年度行动';ns.style.color='#5f5';}
+    else if(data.hiddenIdentity&&!data.yearDone){ns.textContent='🌙 年度行动（先完成基础行动）';ns.style.color='#5f5';}
+    else if(data.baseIdentity==='将军'){ns.textContent='🌙 年度行动（将军）';ns.style.color='#5f5';}
+    else if(data.baseIdentity==='乡绅'){ns.textContent='🌙 年度行动（乡绅修改税收）';ns.style.color='#5f5';}
+    else if(OFFICERS.includes(data.baseIdentity)&&getDutyOfficer()===name){ns.textContent='🌙 年度行动（轮值官员）';ns.style.color='#5f5';}
+    else{ns.textContent='🌙 年度行动（扣除支出）';ns.style.color='#5f5';}
+}
+function showPlayerInfo(){const d=getPlayers()[currentPlayerName];if(!d)return;showSection('player-info-section');let h='<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:12px;">';h+=`<div><img src="${getPinyin(d.baseIdentity)}.jpg" class="id-card" onerror="this.style.display='none'"><p class="card-label base">${d.baseIdentity}</p></div>`;if(d.hiddenIdentity)h+=`<div><img src="${getPinyin(d.hiddenIdentity)}.jpg" class="id-card-small" onerror="this.style.display='none'"><p class="card-label hidden">${d.hiddenIdentity}</p></div>`;h+=`</div><table><tr><td>收入</td><td>${d.income}</td></tr><tr><td>开销</td><td>${d.expense}</td></tr><tr><td>积蓄</td><td>${d.savings}</td></tr><tr><td>HP</td><td>${d.hp}</td></tr><tr><td>San</td><td>${d.san}</td></tr></table>`;document.getElementById('info-content').innerHTML=h;}
+function backToPanel(){showPlayerPanel(currentPlayerName,getPlayers()[currentPlayerName]);}
+function addLog(msg,type){const logs=cloudCache.game_logs||[];logs.unshift({time:new Date().toLocaleString(),msg,type:type||''});if(logs.length>300)logs.length=300;cloudCache.game_logs=logs;scheduleSave();}
+function renderLog(){const logs=cloudCache.game_logs||[],c=document.getElementById('log-display');if(!logs.length){c.innerHTML='<p style="color:#888;">暂无</p>';return;}c.innerHTML=logs.map(l=>`<div class="log-entry ${l.type}">[${l.time}] ${l.msg}</div>`).join('');}
+function clearLog(){if(confirm('清空？')){cloudCache.game_logs=[];scheduleSave();renderLog();}}
+function getPrayerEffect(){return cloudCache.prayer_effect||null;}
+function setPrayerEffect(v){cloudCache.prayer_effect=v;scheduleSave();}
+function getLaborModifier(){return cloudCache.labor_modifier||1;}
+function setLaborModifier(v){cloudCache.labor_modifier=v;scheduleSave();}
+function isWeakened(){return cloudCache.weaken_mode===true;}
+function setWeakened(v){cloudCache.weaken_mode=v;scheduleSave();}
+function weaken(v){if(!isWeakened())return v;return v > 0 ? Math.ceil(v/2) : v;}
+function toggleWeaken(){const n=!isWeakened();setWeakened(n);updateWeakenButton();addLog(`削弱模式${n?'开启':'关闭'}`,'warn');}
+function updateWeakenButton(){const btn=document.getElementById('btn-weaken');if(btn)btn.textContent=isWeakened()?'🔒 削弱模式：开启（增益减半向上取整）':'🔓 削弱模式：关闭';}
+function calcBonus(amount,base){if(amount>=base)return weaken(5);else if(amount>=base*0.6)return 0;else return -Math.floor((base*0.6-amount)/10)*5;}
+
+function playerNightAction(){const players=getPlayers(),data=players[currentPlayerName];if(!data)return;const allDone=data.yearDone&&(!data.hiddenIdentity||data.hiddenYearDone)&&(!(data.baseIdentity==='奸臣')||data.extraActionDone);if(allDone)return;if(!data.yearDone)doPlayerBaseAction(players,data);else if(data.hiddenIdentity&&!data.hiddenYearDone)doPlayerHiddenAction(players,data);else if(data.baseIdentity==='奸臣'&&!data.extraActionDone)doTraitorAction(players,data);setPlayers(players);showPlayerPanel(currentPlayerName,data);}
+
+function doPlayerBaseAction(players,data){let r='';const hd=getDynamicHidden();const laborMod=getLaborModifier();const laborBaseIncome=Math.floor(DEFAULT_STATS['劳动人民'].income*laborMod);const taxRatePerPerson=hd.taxRate/100;const gentryRate=getGentryRate()/100;const salaryRatio=hd.salary/100;
+if(hd.treasury<500){addLog(`⚠️ 国库亏空！当前国库：${hd.treasury}`,'danger');}
+if(COURT_CAMP.includes(data.baseIdentity)){data.income=Math.floor(DEFAULT_STATS[data.baseIdentity].income*salaryRatio);r+=`<p>收入${data.income}（俸禄比例${(salaryRatio*100).toFixed(0)}%）</p>`;}
+else if(data.baseIdentity==='劳动人民'){const courtTax=laborBaseIncome*taxRatePerPerson;const afterCourt=laborBaseIncome-courtTax;const gentryCut=Math.min(afterCourt,laborBaseIncome*gentryRate);data.income=Math.floor(afterCourt-gentryCut);r+=`<p>收入${data.income}（基础${laborBaseIncome}-朝廷税${courtTax.toFixed(1)}-乡绅抽${gentryCut.toFixed(1)}）</p>`;}
+else if(data.baseIdentity==='读书人'){data.income=hd.treasury<500?0:10;r+=`<p>收入${data.income}${hd.treasury<500?'（国库亏空，国库：'+hd.treasury+'）':''}</p>`;if(hd.treasury<500){addLog(`国库亏空（${hd.treasury}），读书人无收入`,'danger');}}
+else if(data.baseIdentity==='乡绅'){const totalLaborBase=laborBaseIncome*10;const totalCourtTax=laborBaseIncome*taxRatePerPerson*10;const afterCourtTotal=Math.max(0,totalLaborBase-totalCourtTax);data.income=Math.floor(Math.min(afterCourtTotal,totalLaborBase*gentryRate));r+=`<p>乡绅收入${data.income}（劳动人民总基础${totalLaborBase}-朝廷税${totalCourtTax}，剩余${afterCourtTotal}，抽${(gentryRate*100).toFixed(0)}%）</p>`;}
+else{r+=`<p>收入${data.income}</p>`;}
+data.savings=data.savings+data.income-data.expense;r+=`<p>扣除支出${data.expense} | 剩余${data.savings}</p>`;addLog(`[${currentPlayerName}] 收入${data.income} 支出${data.expense} 剩余${data.savings}`);
+if(data.savings<0){data.hp=Math.max(0,data.hp-5);data.san=Math.max(0,data.san-3);r+=`<p style="color:#f55;">⚠️ 积蓄不足！HP-5（剩余${data.hp}），San-3（剩余${data.san}）</p>`;addLog(`[${currentPlayerName}] 积蓄不足 HP-5（${data.hp}） San-3（${data.san}）`,'danger');
+if(data.baseIdentity==='劳动人民'){const a=transferPeople(hd,'courtCivilian','rebelCivilian',5);addLog(`朝廷民众-${a}（${hd.courtCivilian}） 起义民众+${a}（${hd.rebelCivilian}）`);}
+else if(data.baseIdentity==='读书人'){const a=transferPeople(hd,'courtCivilian','rebelCivilian',8);addLog(`朝廷民众-${a}（${hd.courtCivilian}） 起义民众+${a}（${hd.rebelCivilian}）（读书人双倍）`);}
+else if(data.baseIdentity==='乡绅'){const a=transferPeople(hd,'courtGentry','rebelGentry',3);addLog(`朝廷乡绅-${a}（${hd.courtGentry}） 起义乡绅+${a}（${hd.rebelGentry}）`);}
+else if(COURT_CAMP.includes(data.baseIdentity)){const a=transferPeople(hd,'courtOfficial','rebelOfficial',1);addLog(`朝廷官员-${a}（${hd.courtOfficial}） 起义官员+${a}（${hd.rebelOfficial}）`);}data.savings=0;}
+if(OFFICERS.includes(data.baseIdentity)&&getDutyOfficer()===currentPlayerName){const totalCourtTax=Math.floor(laborBaseIncome*taxRatePerPerson*10);const totalTax=totalCourtTax+hd.taxBase;const reported=parseInt(prompt(`朝廷税收总额：${totalTax}（劳动人民税${totalCourtTax}+朝廷自赚${hd.taxBase}），上报金额：`,totalTax))||0;const stolen=totalTax-reported;if(stolen>0){data.savings+=stolen;r+=`<p style="color:#c8a860;">💰 贪污${stolen}</p>`;addLog(`[${currentPlayerName}] 税收贪污${stolen}`,'warn');}hd.treasury+=reported;r+=`<p>国库+${reported}</p>`;addLog(`[${currentPlayerName}] 税收上报${reported} 国库${hd.treasury}`);}
+if(data.baseIdentity==='乡绅'){const nextRate=cloudCache.next_gentry_rate||getGentryRate()||10;const newRate=parseInt(prompt(`当前乡绅抽成：${getGentryRate()}%，设置下一年抽成（0=不修改）：`,nextRate));if(newRate>0){cloudCache.next_gentry_rate=newRate;r+=`<p>下一年乡绅抽成改为${newRate}%（明年生效）</p>`;addLog(`[${currentPlayerName}] 乡绅设置下一年抽成为${newRate}%`);}else{r+=`<p>未修改乡绅抽成</p>`;}}
+if(data.baseIdentity==='将军'){const budget=hd.training;const reported=parseInt(prompt(`军费预算：${budget}，上报支出：`,budget))||0;const stolen=budget-reported;if(stolen>0){data.savings+=stolen;r+=`<p style="color:#c8a860;">💰 贪污${stolen}</p>`;addLog(`[${currentPlayerName}] 军费贪污${stolen}`,'warn');}const mb=calcBonus(reported,100);hd.military+=mb;r+=`<p>军力${mb>=0?'+':''}${mb}</p>`;addLog(`[${currentPlayerName}] 军力${mb>=0?'+':''}${mb} 当前${hd.military}`);}
+data.yearDone=true;setDynamicHidden(hd);document.getElementById('night-result-area').innerHTML=`<div class="night-result">${r}</div>`;}
+
+function doTraitorAction(players,data){const choice=confirm('是否卖机密？(确定=是，取消=放弃)');if(!choice){data.extraActionDone=true;document.getElementById('night-result-area').innerHTML='<div class="night-result"><p>放弃卖机密</p></div>';addLog(`[${currentPlayerName}] 奸臣放弃卖机密`);return;}const success=Math.random()<0.5;let r='';if(success){data.savings+=50;r='✅ 卖机密成功！+50';addLog(`[${currentPlayerName}] 奸臣卖机密成功 +50`,'warn');}else{r='❌ 卖机密失败';addLog(`[${currentPlayerName}] 奸臣卖机密失败`);}data.extraActionDone=true;document.getElementById('night-result-area').innerHTML=`<div class="night-result"><p>${r}</p></div>`;}
+
+function doPlayerHiddenAction(players,data){const choice=confirm('是否进行隐藏身份行动？(确定=是，取消=放弃)');if(!choice){data.hiddenYearDone=true;document.getElementById('night-result-area').innerHTML='<div class="night-result"><p>放弃隐藏身份行动</p></div>';addLog(`[${currentPlayerName}] 放弃隐藏身份行动`);showPlayerPanel(currentPlayerName,data);return;}if(data.hiddenIdentity==='邶神信徒'){showPrayerOverlay(players,data);}else if(data.hiddenIdentity==='叛军'){showRebelOverlay(players,data);}}
+
+function showPrayerOverlay(players,data){const overlay=document.createElement('div');overlay.className='card-overlay';overlay.id='prayer-overlay';overlay.innerHTML=`<div style="text-align:center;"><h2 style="color:#8b7dff;">🙏 向邶神祈祷</h2><p style="color:#ccc;margin-bottom:16px;">选择一张卡牌翻开</p><div class="action-cards">${[0,1,2,3,4].map(i=>`<div class="action-card" onclick="flipPrayerCard(${i})" id="prayer-card-${i}">?</div>`).join('')}</div><button class="card-close-btn" onclick="closeOverlay('prayer-overlay')" style="margin-top:16px;">关闭</button></div>`;document.body.appendChild(overlay);overlay._players=players;overlay._data=data;}
+function flipPrayerCard(idx){const cards=document.querySelectorAll('#prayer-overlay .action-card');cards.forEach(c=>c.style.pointerEvents='none');const answered=Math.random()<0.5;const card=document.getElementById('prayer-card-'+idx);const outcomeNames=['天灾','人祸','神罚','无事','反噬'];const o=document.getElementById('prayer-overlay'),players=o._players,data=o._data;if(answered){const result=Math.floor(Math.random()*5);card.textContent=outcomeNames[result];card.classList.add(result===3?'flipped-neutral':'flipped-success');let r='';if(result===4){const oldSavings=data.savings;data.savings=Math.max(0,data.savings-10);r=`反噬：积蓄-10（${oldSavings}→${data.savings}）`;addLog(`[${currentPlayerName}] 邶神信徒-反噬 积蓄${oldSavings}→${data.savings}`,'danger');}else if(result===2){const t=prompt('神罚！没收谁的积蓄？');if(t&&players[t]){const oldSav=players[t].savings;players[t].savings=0;r=`神罚：没收${t}的积蓄（${oldSav}→0）`;addLog(`[${currentPlayerName}] 邶神信徒-神罚 没收${t}全部积蓄(${oldSav})`,'warn');}}else if(result===0){r='天灾';setPrayerEffect('天灾');addLog(`[${currentPlayerName}] 邶神信徒-天灾（下一年天灾概率×3）`,'danger');}else if(result===1){r='人祸';setPrayerEffect('人祸');addLog(`[${currentPlayerName}] 邶神信徒-人祸（下一年人祸概率×3）`,'danger');}else{r='无事发生';addLog(`[${currentPlayerName}] 邶神信徒-无事`);}document.getElementById('night-result-area').innerHTML=`<div class="night-result"><p style="color:#8b7dff;">✨ 祈祷应答：${r}</p></div>`;}else{card.textContent='无应答';card.classList.add('flipped-neutral');addLog(`[${currentPlayerName}] 邶神信徒祈祷无应答`);document.getElementById('night-result-area').innerHTML=`<div class="night-result"><p style="color:#888;">祈祷无应答</p></div>`;}data.hiddenYearDone=true;setPlayers(players);setTimeout(()=>{const o=document.getElementById('prayer-overlay');if(o)o.remove();showPlayerPanel(currentPlayerName,getPlayers()[currentPlayerName]);},1500);}
+
+function showRebelOverlay(players,data){const overlay=document.createElement('div');overlay.className='card-overlay';overlay.id='rebel-overlay';overlay.innerHTML=`<div style="text-align:center;"><h2 style="color:#c44;">⚔️ 叛军打劫</h2><p style="color:#ccc;margin-bottom:16px;">选择卡牌翻开（50%成功率）</p><div class="action-cards">${[0,1].map(i=>`<div class="action-card" onclick="flipRebelCard(${i})" id="rebel-card-${i}">?</div>`).join('')}</div><button class="card-close-btn" onclick="closeOverlay('rebel-overlay')" style="margin-top:16px;">关闭</button></div>`;document.body.appendChild(overlay);overlay._players=players;overlay._data=data;}
+function flipRebelCard(idx){const cards=document.querySelectorAll('#rebel-overlay .action-card');cards.forEach(c=>c.style.pointerEvents='none');const success=Math.random()<0.5;const card=document.getElementById('rebel-card-'+idx);const o=document.getElementById('rebel-overlay'),players=o._players,data=o._data;if(success){card.textContent='成功';card.classList.add('flipped-success');const t=prompt('打劫成功！选择目标官员：');if(t&&players[t]&&COURT_CAMP.includes(players[t].baseIdentity)){const st=Math.floor(players[t].savings*0.5);data.savings+=st;players[t].savings-=st;addLog(`[${currentPlayerName}] 叛军打劫${t}成功 获得${st}（${t}剩余${players[t].savings}）`,'warn');document.getElementById('night-result-area').innerHTML=`<div class="night-result"><p style="color:#5f5;">✅ 打劫${t}成功！+${st}</p></div>`;}else{addLog(`[${currentPlayerName}] 叛军打劫目标无效`);document.getElementById('night-result-area').innerHTML=`<div class="night-result"><p style="color:#f55;">目标无效</p></div>`;}}else{const oldSavings=data.savings;data.savings=Math.max(0,data.savings-10);card.textContent='失败';card.classList.add('flipped-fail');addLog(`[${currentPlayerName}] 叛军打劫失败 积蓄${oldSavings}→${data.savings}`);document.getElementById('night-result-area').innerHTML=`<div class="night-result"><p style="color:#f55;">❌ 打劫失败 -10</p></div>`;}data.hiddenYearDone=true;setPlayers(players);setTimeout(()=>{const o=document.getElementById('rebel-overlay');if(o)o.remove();showPlayerPanel(currentPlayerName,getPlayers()[currentPlayerName]);},1500);}
+function closeOverlay(id){const o=document.getElementById(id);if(o)o.remove();}
+
+function getYearLog(){return cloudCache.year_log||[];}
+function setYearLog(v){cloudCache.year_log=v;scheduleSave();}
+
+function newYear(){
+    const hd=getDynamicHidden();const yearLog=getYearLog();const prayerEffect=getPrayerEffect();
+    if(cloudCache.next_gentry_rate!==null&&cloudCache.next_gentry_rate!==undefined){setGentryRate(cloudCache.next_gentry_rate);cloudCache.next_gentry_rate=null;}
+    addLog(`======== 第${getYear()}年结算 ========`,'warn');
+    const salaryCost=hd.salary;const tc=salaryCost+hd.welfare+hd.training;hd.treasury-=tc;
+    if(hd.treasury<0){addLog(`⚠️ 国库不足！扣除${tc}（俸禄${salaryCost}+福利${hd.welfare}+军事${hd.training}）剩余${hd.treasury}`,'danger');}else{addLog(`国库扣除${tc}（俸禄${salaryCost}+福利${hd.welfare}+军事${hd.training}）剩余${hd.treasury}`);}
+    if(hd.treasury<500){addLog(`⚠️ 国库亏空！当前国库：${hd.treasury}`,'danger');}
+    const wb=calcBonus(hd.welfare,100);
+    if(wb>0){const a=transferPeople(hd,'rebelCivilian','courtCivilian',wb);addLog(`社会福利：起义民众→朝廷民众 +${a}（朝廷${hd.courtCivilian} 起义${hd.rebelCivilian}）`);}
+    else if(wb<0){const a=transferPeople(hd,'courtCivilian','rebelCivilian',-wb);addLog(`社会福利：朝廷民众→起义民众 +${a}（朝廷${hd.courtCivilian} 起义${hd.rebelCivilian}）`);}
+    let disasterProb=0.1,misfortuneProb=0.1;
+    if(prayerEffect==='天灾'){disasterProb=0.3;addLog('邶神信徒祈祷影响：天灾概率30%（×3）','warn');}
+    if(prayerEffect==='人祸'){misfortuneProb=0.3;addLog('邶神信徒祈祷影响：人祸概率30%（×3）','warn');}
+    if(yearLog.length>=2&&yearLog[yearLog.length-1]==='丰收'&&yearLog[yearLog.length-2]==='丰收'){misfortuneProb=1;disasterProb=0;addLog('连续两年丰收！皇帝必定作妖！','danger');}
+    const remaining=1-disasterProb-misfortuneProb;const peaceProb=remaining*0.4/0.8;const harvestProb=remaining*0.2/0.8;const invadeProb=remaining*0.2/0.8;
+    const r=Math.random();let eventResult='';let disasterCount=0;
+    if(r<disasterProb){const disasters=['洪水','干旱','瘟疫','虫灾'];const d=disasters[Math.floor(Math.random()*4)];eventResult='天灾-'+d;disasterCount=1;let extra='';if(d==='洪水'&&Math.random()<0.4){extra='+瘟疫';disasterCount=2;addLog('洪水引发瘟疫！','danger');}if(d==='干旱'&&Math.random()<0.4){extra='+虫灾';disasterCount=2;addLog('干旱引发虫灾！民心下降×2','danger');}eventResult+=extra;addLog(`年度事件：${eventResult}`,'danger');}
+    else if(r<disasterProb+misfortuneProb){const mh=['大兴土木','好战喜攻','美色误国'];const m=mh[Math.floor(Math.random()*3)];eventResult='人祸-'+m;if(m==='大兴土木'){hd.treasury-=200;addLog('大兴土木：国库-200','danger');}else if(m==='好战喜攻'){const win=Math.random()<0.5;if(win){hd.treasury+=200;hd.military+=weaken(-10);addLog('好战喜攻-胜：国库+200 军力-10');}else{hd.treasury-=200;hd.military-=20;addLog('好战喜攻-败：国库-200 军力-20','danger');}}
+    else{hd.taxRate+=10;addLog('美色误国：税收+10%，当前税率'+hd.taxRate+'%','warn');}addLog(`年度事件：${eventResult}`,'danger');}
+    else if(r<disasterProb+misfortuneProb+peaceProb){eventResult='平安无事';addLog('年度事件：平安无事');}
+    else if(r<disasterProb+misfortuneProb+peaceProb+harvestProb){eventResult='丰收';addLog('年度事件：丰收！','warn');}
+    else{eventResult='邻国侵犯';const win=Math.random()<0.5;if(win){hd.treasury+=150;hd.military+=weaken(-10);addLog('邻国侵犯-胜：国库+150 军力-10');}else{hd.treasury-=250;hd.military-=25;addLog('邻国侵犯-败：国库-250 军力-25','danger');}}
+    if(eventResult.includes('天灾')){setLaborModifier(Math.pow(0.5,disasterCount));addLog(`劳动人民收入×${Math.pow(0.5,disasterCount)}（${disasterCount}重灾难）`,'danger');}
+    else if(eventResult==='丰收')setLaborModifier(2);else setLaborModifier(1);
+    yearLog.push(eventResult.split('-')[0]);if(yearLog.length>5)yearLog.shift();setYearLog(yearLog);
+    const players=getPlayers();
+    for(const[n,d]of Object.entries(players)){
+        if(!d.yearDone){addLog(`[${n}] 未完成行动，跳过年度收支计算`);}
+        d.yearDone=false;d.hiddenYearDone=false;d.extraActionDone=false;
+    }
+    setPrayerEffect(null);setYear(getYear()+1);nextDutyOfficer();
+    setPlayers(players);setDynamicHidden(hd);loadHiddenDataDisplay();computeRebelAssets();updateYearDisplay();
+    addLog(`======== 进入第${getYear()}年 ========`,'warn');
+    alert(`第${getYear()-1}年结算完成！\n年度事件：${eventResult}\n已进入第${getYear()}年`);
+    showSection('admin-panel');
+}
+
+function logout(){document.getElementById('night-result-area').innerHTML='';currentPlayerName='';showSection('main-menu');}
+function adminLogin(){if(document.getElementById('admin-pwd-input').value.trim()!==ADMIN_PASSWORD){document.getElementById('admin-login-msg').textContent='密码错误';return;}showSection('admin-panel');}
+function renderAdminTable(){const p=getPlayers();const c=document.getElementById('admin-table');if(!Object.keys(p).length){c.innerHTML='<p style="color:#888;text-align:center;">暂无</p>';return;}let h='<table><thead><tr><th>名字</th><th>身份</th><th>隐藏</th><th>收入</th><th>开销</th><th>积蓄</th><th>HP</th><th>San</th><th>行动</th></tr></thead><tbody>';for(const[n,d]of Object.entries(p))h+=`<tr><td>${n}</td><td>${d.baseIdentity}</td><td class="hidden-cell">${d.hiddenIdentity||'-'}</td><td><input id="adm-income-${n}" value="${d.income}" style="width:50px;"></td><td><input id="adm-expense-${n}" value="${d.expense}" style="width:50px;"></td><td><input id="adm-savings-${n}" value="${d.savings}" style="width:50px;"></td><td><input id="adm-hp-${n}" value="${d.hp}" style="width:40px;"></td><td><input id="adm-san-${n}" value="${d.san}" style="width:40px;"></td><td>${d.yearDone?'✅':''}${d.hiddenYearDone?'🌙':''}${d.extraActionDone?'🔴':''}</td></tr>`;h+='</tbody></table>';c.innerHTML=h;}
+function savePlayersData(){const p=getPlayers();for(const[n,d]of Object.entries(p)){const income=document.getElementById('adm-income-'+n);if(income)d.income=parseInt(income.value)||0;const expense=document.getElementById('adm-expense-'+n);if(expense)d.expense=parseInt(expense.value)||0;const savings=document.getElementById('adm-savings-'+n);if(savings)d.savings=parseInt(savings.value)||0;const hp=document.getElementById('adm-hp-'+n);if(hp)d.hp=parseInt(hp.value)||0;const san=document.getElementById('adm-san-'+n);if(san)d.san=parseInt(san.value)||0;}setPlayers(p);addLog('后台修改了玩家数据','warn');alert('已保存');renderAdminTable();}
+function getDynamicHidden(){return cloudCache.dynamic_hidden||{};}
+function setDynamicHidden(d){cloudCache.dynamic_hidden=d;scheduleSave();}
+function updateLockButton(){const hd=getDynamicHidden();const btn=document.getElementById('btn-lock-rebel');if(btn)btn.textContent=hd.rebelLocked?'🔒 当前：手动固定（点击解锁）':'🔓 当前：动态计算（点击锁定）';}
+function toggleLockRebel(){const hd=getDynamicHidden();hd.rebelLocked=!hd.rebelLocked;setDynamicHidden(hd);updateLockButton();computeRebelAssets();addLog(`起义资产${hd.rebelLocked?'已锁定':'已解锁动态计算'}`,'warn');}
+function loadHiddenDataDisplay(){const hd=getDynamicHidden();document.getElementById('hd-treasury').value=hd.treasury;document.getElementById('hd-military').value=hd.military;document.getElementById('hd-tax-rate').value=hd.taxRate;document.getElementById('hd-tax-base').value=hd.taxBase;document.getElementById('hd-salary').value=hd.salary;document.getElementById('hd-welfare').value=hd.welfare;document.getElementById('hd-training').value=hd.training;document.getElementById('hd-court-official').value=hd.courtOfficial;document.getElementById('hd-rebel-official').value=hd.rebelOfficial;document.getElementById('hd-court-gentry').value=hd.courtGentry;document.getElementById('hd-rebel-gentry').value=hd.rebelGentry;document.getElementById('hd-court-civilian').value=hd.courtCivilian;document.getElementById('hd-rebel-civilian').value=hd.rebelCivilian;document.getElementById('hd-rebel-property').value=hd.rebelProperty;document.getElementById('hd-rebel-military').value=hd.rebelMilitary;computeRebelAssets();updateLockButton();}
+function saveHiddenData(){const hd=getDynamicHidden();const fields=['treasury','military','taxRate','taxBase','salary','welfare','training','courtOfficial','rebelOfficial','courtGentry','rebelGentry','courtCivilian','rebelCivilian','rebelProperty','rebelMilitary'];fields.forEach(f=>{const el=document.getElementById('hd-'+f);if(el&&el.value.trim()!==''){hd[f]=parseInt(el.value)||0;}});setDynamicHidden(hd);computeRebelAssets();addLog('后台修改了隐藏数据','warn');alert('已保存');}
+function computeRebelAssets(){const hd=getDynamicHidden();if(hd.rebelLocked){document.getElementById('hd-rebel-property').value=hd.rebelProperty;document.getElementById('hd-rebel-military').value=hd.rebelMilitary;return;}const players=getPlayers();let civSav=0,gentSav=0;for(const[_,d]of Object.entries(players)){if(d.baseIdentity==='劳动人民'||d.baseIdentity==='读书人')civSav+=d.savings;if(d.baseIdentity==='乡绅')gentSav+=d.savings;}hd.rebelProperty=Math.floor(civSav*10+gentSav*10);hd.rebelMilitary=Math.floor(hd.rebelProperty*0.05);document.getElementById('hd-rebel-property').value=hd.rebelProperty;document.getElementById('hd-rebel-military').value=hd.rebelMilitary;}
+function resetAll(){if(confirm('清除所有？')){cloudCache={players:{},identity_pool:{},hidden_pool:{},dynamic_hidden:{},game_year:1,gentry_rate:10,labor_modifier:1,weaken_mode:false,duty_index:0,game_logs:[],year_log:[],prayer_effect:null,next_gentry_rate:null,identity_pool_initialized:true};scheduleSave();alert('已重置');showSection('admin-panel');}}
+function adminLogout(){showSection('main-menu');}
+window.addEventListener('DOMContentLoaded',async()=>{
+    // 匿名登录
+    try { await auth.anonymousAuthProvider().signIn(); } catch(e) {}
+    // 加载云端数据
+    await loadFromCloud();
+    if(!cloudCache.identity_pool_initialized){
+        const p={};p['忠臣']=2;p['贪官']=2;p['将军']=1;p['奸臣']=1;p['乡绅']=1;p['读书人']=1;p['劳动人民']=2;setPool(p);
+        const hp={};HIDDEN_IDENTITIES.forEach(id=>hp[id]=1);setHiddenPool(hp);
+        cloudCache.identity_pool_initialized=true;
+    }
+    if(!cloudCache.dynamic_hidden||Object.keys(cloudCache.dynamic_hidden).length===0)setDynamicHidden(INIT_HIDDEN);
+    if(!cloudCache.game_year)setYear(1);
+    if(!cloudCache.gentry_rate)setGentryRate(10);
+    if(!cloudCache.labor_modifier)setLaborModifier(1);
+    scheduleSave();
+    renderInitInputs();updateDutyDisplay();updateYearDisplay();
+    showSection('main-menu');
+});
+</script>
+</body>
+</html>
